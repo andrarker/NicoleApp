@@ -119,8 +119,7 @@ class MainActivity : ComponentActivity() {
                                         fontFamily = FontFamily.Monospace,
                                         color = SoftWhite,
                                         lineHeight = 15.sp,
-                                        maxLines = 12,
-                                        modifier = Modifier.verticalScroll(rememberScrollState())
+                                        maxLines = 20
                                     )
                                 }
                             }
