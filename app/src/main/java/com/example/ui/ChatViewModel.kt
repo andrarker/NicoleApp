@@ -38,7 +38,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPrefs = application.getSharedPreferences("nicole_prefs", Context.MODE_PRIVATE)
 
     private val _selectedModel = MutableStateFlow(
-        sharedPrefs.getString("selected_model", "gemini-3.5-flash") ?: "gemini-3.5-flash"
+        sharedPrefs.getString("selected_model", "gemini-1.5-flash") ?: "gemini-1.5-flash"
     )
     val selectedModel: StateFlow<String> = _selectedModel.asStateFlow()
 
@@ -46,11 +46,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val pendingAttachment: StateFlow<PendingAttachment?> = _pendingAttachment.asStateFlow()
 
     val modelOptions = listOf(
-        ModelOption("gemini-3.5-flash", "Flash 3.5 (Consigliato 🚀)"),
-        ModelOption("gemini-3.1-flash-lite-preview", "Flash Lite 3.1 (Anti-Limite) 🍃"),
-        ModelOption("gemini-3.1-pro-preview", "Pro 3.1 (Studio e Creatività) 🧠"),
-        ModelOption("gemma-2-27b-it", "Gemma 4 (Super Leggero) 💎"),
-        ModelOption("gemini-3-pro-image-preview", "Nano Banana Pro 2 (Immagini) 🎨")
+        ModelOption("gemini-1.5-flash", "Flash 1.5 (Consigliato 🚀)"),
+        ModelOption("gemini-1.5-flash-8b", "Flash Lite 1.5 (Anti-Limite) 🍃"),
+        ModelOption("gemini-1.5-pro", "Pro 1.5 (Studio e Creatività) 🧠"),
+        ModelOption("gemma-2-27b-it", "Gemma 2 (Super Leggero) 💎"),
+        ModelOption("gemini-2.0-flash-exp-image-generation", "Flash Image Gen (Immagini) 🎨")
     )
 
     init {
@@ -76,8 +76,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val validIds = modelOptions.map { it.id }
         if (_selectedModel.value !in validIds) {
-            _selectedModel.value = "gemini-3.5-flash"
-            sharedPrefs.edit().putString("selected_model", "gemini-3.5-flash").apply()
+            _selectedModel.value = "gemini-1.5-flash"
+            sharedPrefs.edit().putString("selected_model", "gemini-1.5-flash").apply()
         }
     }
 
@@ -194,7 +194,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
             // 2. Check API key presence
             val apiKey = BuildConfig.GEMINI_API_KEY
-            if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY" || apiKey == "YOUR_API_KEY") {
+            if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY" || apiKey == "YOUR_API_KEY" || apiKey == "YOUR_GEMINI_API_KEY_HERE") {
                 repository?.insert(
                     ChatMessage(
                         text = "Configura il tuo GEMINI_API_KEY nel Secrets panel di AI Studio " +
