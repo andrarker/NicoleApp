@@ -2,14 +2,21 @@
 set -e
 
 ANDROID_SDK_DIR="/home/runner/android-sdk"
-JAVA_HOME_PATH=$(dirname $(dirname $(which java)) 2>/dev/null || echo "")
 
-# Set up Java
-if [ -z "$JAVA_HOME_PATH" ]; then
-  echo "ERROR: Java not found. Please ensure java-graalvm22.3 module is installed."
-  exit 1
+# Prefer JDK 17 (required by Android Gradle Plugin), fall back to any java
+if [ -d "/nix/store/xad649j61kwkh0id5wvyiab5rliprp4d-openjdk-17.0.15+6/lib/openjdk" ]; then
+  export JAVA_HOME="/nix/store/xad649j61kwkh0id5wvyiab5rliprp4d-openjdk-17.0.15+6/lib/openjdk"
+elif [ -n "$JAVA_HOME" ] && [ -d "$JAVA_HOME" ]; then
+  echo "Using existing JAVA_HOME: $JAVA_HOME"
+else
+  JAVA_HOME_PATH=$(dirname $(dirname $(which java)) 2>/dev/null || echo "")
+  if [ -z "$JAVA_HOME_PATH" ]; then
+    echo "ERROR: Java not found. Please ensure the java-graalvm22.3 module is installed."
+    exit 1
+  fi
+  export JAVA_HOME="$JAVA_HOME_PATH"
 fi
-export JAVA_HOME="$JAVA_HOME_PATH"
+echo "Using Java: $JAVA_HOME"
 
 # Download Android SDK command-line tools if not present
 if [ ! -d "$ANDROID_SDK_DIR/cmdline-tools/latest" ]; then

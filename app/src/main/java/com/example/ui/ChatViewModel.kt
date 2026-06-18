@@ -49,7 +49,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         ModelOption("gemini-1.5-flash", "Flash 1.5 (Consigliato 🚀)"),
         ModelOption("gemini-1.5-flash-8b", "Flash Lite 1.5 (Anti-Limite) 🍃"),
         ModelOption("gemini-1.5-pro", "Pro 1.5 (Studio e Creatività) 🧠"),
-        ModelOption("gemma-2-27b-it", "Gemma 2 (Super Leggero) 💎"),
+        ModelOption("gemini-2.0-flash-lite", "Flash 2.0 Lite (Super Leggero) 💎"),
         ModelOption("gemini-2.0-flash-exp-image-generation", "Flash Image Gen (Immagini) 🎨")
     )
 
