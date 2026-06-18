@@ -1,11 +1,19 @@
 package com.example
 
-import android.content.ClipboardManager
 import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Process
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,176 +41,180 @@ import com.example.ui.ChatScreen
 import com.example.ui.ChatViewModel
 import com.example.ui.theme.*
 import com.example.utils.CrashHandler
+import java.io.PrintWriter
+import java.io.StringWriter
 
 class MainActivity : ComponentActivity() {
     private val viewModel: ChatViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Initialize global crash interceptor before anything else executes!
         CrashHandler.init(this)
-        
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val lastCrash = CrashHandler.getLastCrash(this)
 
-        setContent {
-            MyApplicationTheme {
-                if (lastCrash != null) {
-                    var copied by remember { mutableStateOf(false) }
-                    
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MidnightSlate
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp)
-                                .verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+        try {
+            setContent {
+                MyApplicationTheme {
+                    if (lastCrash != null) {
+                        var copied by remember { mutableStateOf(false) }
+
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MidnightSlate
                         ) {
-                            Box(
+                            Column(
                                 modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(Brush.radialGradient(listOf(OrangeFlame, Color.Transparent)))
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
+                                    .fillMaxSize()
+                                    .padding(24.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Text("🌶️", fontSize = 36.sp)
-                            }
+                                Text(
+                                    text = "Uè uagliò! Errore di Nicole! 💔",
+                                    fontSize = 18.sp,
+                                    color = androidx.compose.ui.graphics.Color(0xFFF0F0FA),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    textAlign = TextAlign.Center
+                                )
 
-                            Spacer(modifier = Modifier.height(20.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                            Text(
-                                text = "Uè uagliò! Errore di Nicole! 💔💅",
-                                fontSize = 18.sp,
-                                color = SoftWhite,
-                                fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = "L'applicazione si è arrestata improvvisamente. Puoi copiare i dettagli dell'errore qui sotto per aiutarci, oppure tentare un ripristino istantaneo!",
-                                fontSize = 13.sp,
-                                color = MutedSlate,
-                                lineHeight = 18.sp,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = CardSlate),
-                                border = BorderStroke(0.5.dp, OrangeFlame.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "LOG ERRORE (Invialo a noi!)",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = OrangeFlame,
-                                        letterSpacing = 1.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF1E1E34)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
                                     Text(
                                         text = lastCrash,
-                                        fontSize = 11.sp,
+                                        fontSize = 10.sp,
                                         fontFamily = FontFamily.Monospace,
-                                        color = SoftWhite,
-                                        lineHeight = 15.sp,
-                                        maxLines = 20
+                                        color = androidx.compose.ui.graphics.Color(0xFFF0F0FA),
+                                        lineHeight = 14.sp,
+                                        modifier = Modifier.padding(12.dp)
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Button(
+                                    onClick = {
+                                        try {
+                                            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                            clipboard.setPrimaryClip(ClipData.newPlainText("crash", lastCrash))
+                                            copied = true
+                                        } catch (e: Exception) { }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFFFFB1C5)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(if (copied) "✓ Copiato!" else "📋 Copia errore", color = androidx.compose.ui.graphics.Color(0xFF0F0F1A))
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(
+                                    onClick = {
+                                        try {
+                                            deleteDatabase("nicoleporchetta_chat_db")
+                                            getSharedPreferences("nicole_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+                                            CrashHandler.clearLastCrash(this@MainActivity)
+                                            val intent = packageManager.getLaunchIntentForPackage(packageName)
+                                            intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                            startActivity(intent)
+                                            finish()
+                                            Process.killProcess(Process.myPid())
+                                        } catch (e: Exception) { }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFFFF6D95)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("🛠️ Ripristina App", color = androidx.compose.ui.graphics.Color(0xFFF0F0FA))
+                                }
                             }
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Button(
-                                onClick = {
-                                    try {
-                                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        val clip = ClipData.newPlainText("Nicole Crash Log", lastCrash)
-                                        clipboard.setPrimaryClip(clip)
-                                        copied = true
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = if (copied) GlowNeon else SoftPink),
-                                shape = RoundedCornerShape(24.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                            ) {
-                                Text(
-                                    text = if (copied) "✓ Errore Copiato in Clipboard" else "📋 Copia Log Errore",
-                                    color = MidnightSlate,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Button(
-                                onClick = {
-                                    try {
-                                        deleteDatabase("nicoleporchetta_chat_db")
-                                        val sharedPrefs = getSharedPreferences("nicole_prefs", Context.MODE_PRIVATE)
-                                        sharedPrefs.edit().clear().commit()
-                                        CrashHandler.clearLastCrash(this@MainActivity)
-
-                                        val intent = packageManager.getLaunchIntentForPackage(packageName)
-                                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                        startActivity(intent)
-                                        finish()
-                                        Process.killProcess(Process.myPid())
-                                        java.lang.System.exit(0)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
-                                shape = RoundedCornerShape(24.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .shadow(8.dp, RoundedCornerShape(24.dp))
-                            ) {
-                                Text(
-                                    text = "🛠️ Ripristina & Ripara l'App",
-                                    color = SoftWhite,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = "Tranquillo uagliò, riparando l'app potrai ricominciare a parlare con NicolePorchetta in men che non si dica! 🍕💅",
-                                fontSize = 11.sp,
-                                color = MutedSlate,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
                         }
+                    } else {
+                        ChatScreen(
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
-                } else {
-                    ChatScreen(
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
                 }
             }
+        } catch (e: Throwable) {
+            // Compose itself crashed — show error with pure Android Views (no Compose dependency)
+            showNativeCrashScreen(e)
         }
+    }
+
+    private fun showNativeCrashScreen(throwable: Throwable) {
+        val sw = StringWriter()
+        throwable.printStackTrace(PrintWriter(sw))
+        val crashText = sw.toString()
+
+        // Save crash to prefs
+        try {
+            val prefs = getSharedPreferences("nicole_crash_prefs", Context.MODE_PRIVATE)
+            prefs.edit().putString("last_crash", crashText).commit()
+        } catch (_: Exception) {}
+
+        val dp = { v: Int -> TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt() }
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0F0F1A"))
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setPadding(dp(24), dp(48), dp(24), dp(24))
+        }
+
+        val title = TextView(this).apply {
+            text = "CRASH DIAGNOSTICA\nComposable Compose fallita all'avvio"
+            setTextColor(Color.parseColor("#FF6D95"))
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, dp(16))
+        }
+
+        val scrollView = ScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+            )
+        }
+
+        val crashLog = TextView(this).apply {
+            text = crashText
+            setTextColor(Color.WHITE)
+            textSize = 11f
+            setBackgroundColor(Color.parseColor("#1E1E34"))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+
+        val copyBtn = Button(this).apply {
+            text = "Copia Log Errore"
+            setBackgroundColor(Color.parseColor("#FFB1C5"))
+            setTextColor(Color.parseColor("#0F0F1A"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, dp(16), 0, dp(8)) }
+            setOnClickListener {
+                try {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("crash", crashText))
+                    text = "✓ Copiato negli appunti!"
+                } catch (_: Exception) {}
+            }
+        }
+
+        scrollView.addView(crashLog)
+        root.addView(title)
+        root.addView(scrollView)
+        root.addView(copyBtn)
+
+        setContentView(root)
     }
 }
