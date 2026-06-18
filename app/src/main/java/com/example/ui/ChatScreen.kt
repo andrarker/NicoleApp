@@ -367,7 +367,7 @@ fun ChatScreen(
                             shape = RoundedCornerShape(24.dp),
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
-                                autoCorrectEnabled = true,
+                                autoCorrect = true,
                                 imeAction = ImeAction.Send
                             ),
                             keyboardActions = KeyboardActions(
