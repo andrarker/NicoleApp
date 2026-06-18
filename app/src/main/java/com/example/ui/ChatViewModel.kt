@@ -13,6 +13,9 @@ import com.example.data.api.GenerateContentRequest
 import com.example.data.api.GenerationConfig
 import com.example.data.api.ImageConfig
 import com.example.data.api.InlineData
+import com.example.data.api.OpenRouterClient
+import com.example.data.api.OpenRouterMessage
+import com.example.data.api.OpenRouterRequest
 import com.example.data.api.Part
 import com.example.data.api.RetrofitClient
 import com.example.data.chat.ChatDatabase
@@ -38,7 +41,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPrefs = application.getSharedPreferences("nicole_prefs", Context.MODE_PRIVATE)
 
     private val _selectedModel = MutableStateFlow(
-        sharedPrefs.getString("selected_model", "gemini-1.5-flash") ?: "gemini-1.5-flash"
+        sharedPrefs.getString("selected_model", "gemini-2.5-flash-preview-05-20") ?: "gemini-2.5-flash-preview-05-20"
     )
     val selectedModel: StateFlow<String> = _selectedModel.asStateFlow()
 
@@ -46,12 +49,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val pendingAttachment: StateFlow<PendingAttachment?> = _pendingAttachment.asStateFlow()
 
     val modelOptions = listOf(
-        ModelOption("gemini-1.5-flash", "Flash 1.5 (Consigliato 🚀)"),
+        ModelOption("gemini-2.5-flash-preview-05-20", "Flash 2.5 (Consigliato 🚀)"),
         ModelOption("gemini-1.5-flash-8b", "Flash Lite 1.5 (Anti-Limite) 🍃"),
-        ModelOption("gemini-1.5-pro", "Pro 1.5 (Studio e Creatività) 🧠"),
+        ModelOption("gemini-2.5-pro-preview-06-05", "Pro 2.5 (Studio e Creatività) 🧠"),
         ModelOption("gemini-2.0-flash-lite", "Flash 2.0 Lite (Super Leggero) 💎"),
-        ModelOption("gemini-2.0-flash-exp-image-generation", "Flash Image Gen (Immagini) 🎨")
+        ModelOption("gemini-2.0-flash-exp-image-generation", "Flash Image Gen (Immagini) 🎨"),
+        ModelOption("liquid/laguna-m1", "Laguna M1 (OpenRouter) 🌊")
     )
+
+    private fun isOpenRouterModel(modelId: String) = modelId.contains("/")
 
     init {
         var initializedDb: ChatDatabase? = null
@@ -76,8 +82,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val validIds = modelOptions.map { it.id }
         if (_selectedModel.value !in validIds) {
-            _selectedModel.value = "gemini-1.5-flash"
-            sharedPrefs.edit().putString("selected_model", "gemini-1.5-flash").apply()
+            _selectedModel.value = "gemini-2.5-flash-preview-05-20"
+            sharedPrefs.edit().putString("selected_model", "gemini-2.5-flash-preview-05-20").apply()
         }
     }
 
@@ -241,37 +247,62 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             try {
-                val isImageGenerationModel = _selectedModel.value.contains("image")
-                val request = GenerateContentRequest(
-                    contents = apiContents,
-                    systemInstruction = systemInstruction,
-                    generationConfig = GenerationConfig(
-                        temperature = 0.9f,
-                        responseModalities = if (isImageGenerationModel) listOf("TEXT", "IMAGE") else null,
-                        imageConfig = if (isImageGenerationModel) ImageConfig(aspectRatio = "1:1") else null
+                if (isOpenRouterModel(_selectedModel.value)) {
+                    val orApiKey = BuildConfig.OPENROUTER_API_KEY
+                    val systemText = systemInstruction.parts.firstOrNull()?.text ?: ""
+                    val messages = mutableListOf<OpenRouterMessage>()
+                    if (systemText.isNotEmpty()) {
+                        messages.add(OpenRouterMessage(role = "system", content = systemText))
+                    }
+                    apiContents.forEach { content ->
+                        val textContent = content.parts.mapNotNull { it.text }.joinToString("\n")
+                        if (textContent.isNotEmpty()) {
+                            val role = if (content.role == "user") "user" else "assistant"
+                            messages.add(OpenRouterMessage(role = role, content = textContent))
+                        }
+                    }
+                    val orRequest = OpenRouterRequest(
+                        model = _selectedModel.value,
+                        messages = messages,
+                        temperature = 0.9f
                     )
-                )
-
-                val response = RetrofitClient.service.generateContent(_selectedModel.value, apiKey, request)
-                val responseParts = response.candidates?.firstOrNull()?.content?.parts
-                
-                val replyText = responseParts?.firstOrNull { it.text != null }?.text
-                val inlineImage = responseParts?.firstOrNull { it.inlineData != null }
-                val generatedImageBase64 = inlineImage?.inlineData?.data
-
-                val finalReplyText = when {
-                    !replyText.isNullOrBlank() -> replyText
-                    generatedImageBase64 != null -> "Ecco l'immagine che hai chiesto uagliò! Non farmi faticare troppo mò! 🎨🍣 - Nicole, col sushi in prima linea 💅"
-                    else -> "Claude ha esitato... Nessuna risposta prodotta."
+                    val orResponse = OpenRouterClient.service.chatCompletion(
+                        authorization = "Bearer $orApiKey",
+                        request = orRequest
+                    )
+                    val replyText = orResponse.choices?.firstOrNull()?.message?.content
+                    val finalReplyText = if (!replyText.isNullOrBlank()) replyText
+                        else orResponse.error?.message ?: "Nessuna risposta da Laguna M1."
+                    repository?.insert(ChatMessage(text = finalReplyText, isUser = false))
+                } else {
+                    val isImageGenerationModel = _selectedModel.value.contains("image")
+                    val request = GenerateContentRequest(
+                        contents = apiContents,
+                        systemInstruction = systemInstruction,
+                        generationConfig = GenerationConfig(
+                            temperature = 0.9f,
+                            responseModalities = if (isImageGenerationModel) listOf("TEXT", "IMAGE") else null,
+                            imageConfig = if (isImageGenerationModel) ImageConfig(aspectRatio = "1:1") else null
+                        )
+                    )
+                    val response = RetrofitClient.service.generateContent(_selectedModel.value, apiKey, request)
+                    val responseParts = response.candidates?.firstOrNull()?.content?.parts
+                    val replyText = responseParts?.firstOrNull { it.text != null }?.text
+                    val inlineImage = responseParts?.firstOrNull { it.inlineData != null }
+                    val generatedImageBase64 = inlineImage?.inlineData?.data
+                    val finalReplyText = when {
+                        !replyText.isNullOrBlank() -> replyText
+                        generatedImageBase64 != null -> "Ecco l'immagine che hai chiesto uagliò! Non farmi faticare troppo mò! 🎨🍣 - Nicole, col sushi in prima linea 💅"
+                        else -> "Claude ha esitato... Nessuna risposta prodotta."
+                    }
+                    repository?.insert(
+                        ChatMessage(
+                            text = finalReplyText,
+                            isUser = false,
+                            generatedImageBase64 = generatedImageBase64
+                        )
+                    )
                 }
-
-                repository?.insert(
-                    ChatMessage(
-                        text = finalReplyText,
-                        isUser = false,
-                        generatedImageBase64 = generatedImageBase64
-                    )
-                )
             } catch (e: Exception) {
                 val errorDetails = if (e is retrofit2.HttpException) {
                     val rawError = try {
