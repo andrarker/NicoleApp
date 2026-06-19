@@ -28,7 +28,9 @@ jobs:
       - name: Crea file con API Key e SDK path
         run: |
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
           echo "GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE" > .env.example
+          echo "OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE" >> .env.example
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Rendi gradlew eseguibile
